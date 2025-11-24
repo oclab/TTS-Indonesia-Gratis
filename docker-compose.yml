@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  tts-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tts-indonesia-api
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DEBUG=false
+    volumes:
+      # Mount outputs directory untuk menyimpan file audio yang dihasilkan
+      - ./outputs:/app/outputs
+      # Mount model files (read-only)
+      - ./checkpoint_1260000-inference.pth:/app/checkpoint_1260000-inference.pth:ro
+      - ./config.json:/app/config.json:ro
+      - ./speakers.pth:/app/speakers.pth:ro
+      - ./languages.json:/app/languages.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

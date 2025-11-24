@@ -6,8 +6,7 @@ import numpy as np
 import onnxruntime
 from nltk.tokenize import TweetTokenizer
 from sacremoses import MosesDetokenizer
-
-from .syllable_splitter import SyllableSplitter
+from syllable_splitter import SyllableSplitter
 
 ABJAD_MAPPING = {
     "a": "a",
@@ -64,6 +63,8 @@ dirname = os.path.dirname(__file__)
 
 # Predict pronounciation with BERT Masking
 # Read more: https://w11wo.github.io/posts/2022/04/predicting-phonemes-with-bert/
+
+
 class Predictor:
     def __init__(self, model_path):
         # fmt: off
@@ -82,7 +83,8 @@ class Predictor:
         Returns:
             str: The predicted phonetic representation of the word.
         """
-        text = [self.vocab.index(c) if c != "e" else self.mask_token_id for c in word]
+        text = [self.vocab.index(
+            c) if c != "e" else self.mask_token_id for c in word]
         text.extend([0] * (32 - len(text)))  # Pad to 32 tokens
         inputs = np.array([text], dtype=np.int64)
         (predictions,) = self.session.run(None, {"input_4": inputs})

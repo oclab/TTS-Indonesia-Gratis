@@ -21,7 +21,6 @@ API Endpoints:
 - GET /health - Health check endpoint
 """
 
-from g2p import G2P
 import html
 import json
 import os
@@ -32,13 +31,49 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
+from flask_restx import Api, Namespace, Resource, fields
 from werkzeug.exceptions import BadRequest
 
 sys.path.insert(0, str(Path(__file__).parent / 'g2p-id'))
+from g2p import G2P
 
 # Inisialisasi Flask app
 app = Flask(__name__)
 CORS(app)
+
+# Inisialisasi API dengan Swagger documentation
+api = Api(
+    app,
+    version='1.0',
+    title='TTS Indonesia API',
+    description='API untuk Text-to-Speech bahasa Indonesia dengan berbagai pilihan suara',
+    doc='/swagger/',
+    contact='Energi Semesta Digital',
+    contact_url='https://github.com/muhammwafa/TTS-Indonesia-Gratis'
+)
+
+# Namespace untuk API endpoints
+ns = Namespace('api', description='API operations')
+api.add_namespace(ns)
+
+# Data models untuk Swagger documentation
+tts_model = api.model('TTSRequest', {
+    'text': fields.String(required=True, description='Text yang akan diubah menjadi suara', example='Halo, selamat pagi Indonesia!'),
+    'speaker': fields.String(required=False, description='Pilihan speaker', default='ardi', enum=['wibowo', 'ardi', 'gadis', 'juminten', 'asep']),
+    'speed': fields.Float(required=False, description='Kecepatan bicara (0.1 - 1.99)', default=0.8, example=0.8),
+    'language': fields.String(required=False, description='Bahasa', default='Indonesian', example='Indonesian')
+})
+
+speaker_model = api.model('Speaker', {
+    'id': fields.String(description='ID speaker', example='ardi'),
+    'name': fields.String(description='Nama speaker', example='Ardi'),
+    'description': fields.String(description='Deskripsi speaker', example='Suara lembut dan hangat')
+})
+
+health_model = api.model('Health', {
+    'status': fields.String(description='Service status', example='healthy'),
+    'service': fields.String(description='Service name', example='TTS Indonesia API')
+})
 
 # Inisialisasi G2P (Grapheme to Phoneme)
 g2p = G2P()
@@ -124,127 +159,133 @@ def gen_voice(text, speaker, speed=0.8, language="Indonesian"):
         return None, str(e)
 
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'service': 'TTS Indonesia API'
-    })
-
-
-@app.route('/api/speakers', methods=['GET'])
-def get_speakers():
-    """Mendapatkan daftar pembicara yang tersedia"""
-    speakers = [
-        {
-            "id": "wibowo",
-            "name": "Wibowo",
-            "description": "Suara jantan berwibawa"
-        },
-        {
-            "id": "ardi",
-            "name": "Ardi",
-            "description": "Suara lembut dan hangat"
-        },
-        {
-            "id": "gadis",
-            "name": "Gadis",
-            "description": "Suara perempuan yang merdu"
-        },
-        {
-            "id": "juminten",
-            "name": "Juminten",
-            "description": "Suara perempuan jawa (bahasa jawa)"
-        },
-        {
-            "id": "asep",
-            "name": "Asep",
-            "description": "Suara lelaki sunda (bahasa sunda)"
+@api.route('/health')
+class HealthCheck(Resource):
+    @api.doc('health_check')
+    @api.marshal_with(health_model)
+    def get(self):
+        """Health check endpoint"""
+        return {
+            'status': 'healthy',
+            'service': 'TTS Indonesia API'
         }
-    ]
-    return jsonify({
-        'speakers': speakers,
-        'default': default_speaker_name
-    })
 
 
-@app.route('/api/languages', methods=['GET'])
-def get_languages():
-    """Mendapatkan daftar bahasa yang tersedia"""
-    return jsonify({
-        'languages': list(languages.keys()) if languages else ["Indonesian"]
-    })
+@ns.route('/speakers')
+class SpeakersList(Resource):
+    @api.doc('get_speakers')
+    @api.marshal_list_with(speaker_model)
+    def get(self):
+        """Mendapatkan daftar pembicara yang tersedia"""
+        speakers = [
+            {
+                "id": "wibowo",
+                "name": "Wibowo",
+                "description": "Suara jantan berwibawa"
+            },
+            {
+                "id": "ardi",
+                "name": "Ardi",
+                "description": "Suara lembut dan hangat"
+            },
+            {
+                "id": "gadis",
+                "name": "Gadis",
+                "description": "Suara perempuan yang merdu"
+            },
+            {
+                "id": "juminten",
+                "name": "Juminten",
+                "description": "Suara perempuan jawa (bahasa jawa)"
+            },
+            {
+                "id": "asep",
+                "name": "Asep",
+                "description": "Suara lelaki sunda (bahasa sunda)"
+            }
+        ]
+        return {
+            'speakers': speakers,
+            'default': default_speaker_name
+        }
 
 
-@app.route('/api/tts', methods=['POST'])
-def generate_tts():
-    """
-    Generate TTS audio dari teks
+@ns.route('/languages')
+class LanguagesList(Resource):
+    @api.doc('get_languages')
+    def get(self):
+        """Mendapatkan daftar bahasa yang tersedia"""
+        return {
+            'languages': list(languages.keys()) if languages else ["Indonesian"]
+        }
 
-    Request Body:
-    {
-        "text": "Teks yang akan diubah menjadi suara",
-        "speaker": "ardi",  # Optional, default: ardi
-        "speed": 0.8,  # Optional, default: 0.8
-        "language": "Indonesian"  # Optional, default: Indonesian
-    }
-    """
-    try:
-        data = request.get_json()
 
-        if not data:
-            raise BadRequest("Request body harus berisi JSON")
+@ns.route('/tts')
+class TTSGenerate(Resource):
+    @api.doc('generate_tts')
+    @api.expect(tts_model)
+    @api.produces(['audio/wav'])
+    def post(self):
+        """
+        Generate TTS audio dari teks
 
-        text = data.get('text')
-        if not text:
-            raise BadRequest("Parameter 'text' wajib diisi")
-
-        speaker = data.get('speaker', default_speaker_name)
-        speed = data.get('speed', 0.8)
-        language = data.get('language', 'Indonesian')
-
-        # Validasi speed
+        Menghasilkan file audio dari teks dalam bahasa Indonesia menggunakan speaker yang dipilih.
+        """
         try:
-            speed = float(speed)
-            if speed < 0.1 or speed > 1.99:
+            data = request.get_json()
+
+            if not data:
+                raise BadRequest("Request body harus berisi JSON")
+
+            text = data.get('text')
+            if not text:
+                raise BadRequest("Parameter 'text' wajib diisi")
+
+            speaker = data.get('speaker', default_speaker_name)
+            speed = data.get('speed', 0.8)
+            language = data.get('language', 'Indonesian')
+
+            # Validasi speed
+            try:
+                speed = float(speed)
+                if speed < 0.1 or speed > 1.99:
+                    speed = 0.8
+            except:
                 speed = 0.8
-        except:
-            speed = 0.8
 
-        # Generate audio
-        audio_file, error = gen_voice(text, speaker, speed, language)
+            # Generate audio
+            audio_file, error = gen_voice(text, speaker, speed, language)
 
-        if error:
-            return jsonify({
+            if error:
+                return {
+                    'success': False,
+                    'error': error
+                }, 500
+
+            if not audio_file or not Path(audio_file).exists():
+                return {
+                    'success': False,
+                    'error': 'Gagal menghasilkan audio'
+                }, 500
+
+            # Return audio file
+            return send_file(
+                audio_file,
+                mimetype='audio/wav',
+                as_attachment=True,
+                download_name=Path(audio_file).name
+            )
+
+        except BadRequest as e:
+            return {
                 'success': False,
-                'error': error
-            }), 500
-
-        if not audio_file or not Path(audio_file).exists():
-            return jsonify({
+                'error': str(e)
+            }, 400
+        except Exception as e:
+            return {
                 'success': False,
-                'error': 'Gagal menghasilkan audio'
-            }), 500
-
-        # Return audio file
-        return send_file(
-            audio_file,
-            mimetype='audio/wav',
-            as_attachment=True,
-            download_name=Path(audio_file).name
-        )
-
-    except BadRequest as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 400
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Internal server error: {str(e)}'
-        }), 500
+                'error': f'Internal server error: {str(e)}'
+            }, 500
 
 
 @app.route('/', methods=['GET'])
@@ -265,6 +306,6 @@ def index():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 3000))
     debug = os.environ.get('DEBUG', 'False').lower() == 'true'
     app.run(host='0.0.0.0', port=port, debug=debug)

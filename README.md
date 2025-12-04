@@ -6,7 +6,7 @@
 [![Jalankan Aplikasi ini](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-xl-dark.svg)](https://deddy-tts-indonesiaku-gratis.hf.space)
 
 
-Aplikasi ini digunakan untuk menghasilkan suara berbasis teks dengan berbagai pilihan pembicara. Teknologi yang digunakan meliputi model text-to-speech (TTS) yang canggih dengan konversi teks ke fonem (G2P). Model ini dilatih khusus untuk bahasa Indonesia, Jawa, dan Sunda.
+Aplikasi ini digunakan untuk menghasilkan suara berbasis teks dengan berbagai pilihan pembicara. Teknologi yang digunakan meliputi model text-to-speech (TTS) yang canggih dengan konversi teks ke fonem (G2P). Model yang dipakai dilatih khusus untuk bahasa Indonesia, Jawa, dan Sunda.
 
 ## Data
 
@@ -95,7 +95,7 @@ Trained from scratch on:
 
 ## Lisensi
 
-Proyek ini dilisensikan di bawah lisensi MIT. Lihat file [LICENSE](LICENSE) untuk informasi lebih lanjut.
+Proyek ini dilisensikan di bawah lisensi GPL-3.0. Lihat file [LICENSE](LICENSE) untuk informasi lebih lanjut.
 
 ## Kontribusi
 
@@ -103,8 +103,8 @@ Kami menyambut kontribusi dari siapa pun. Untuk berkontribusi, silakan buat _pul
 
 ## Kontak
 
-Untuk informasi lebih lanjut, silakan hubungi __drat di : http://drat.github.io
+Untuk informasi lebih lanjut, silakan hubungi drat di : https://drat.github.io
 
 ---
 
-Energi Semesta Digital © 2024 __drat. | 🇮🇩 Untuk Indonesia Jaya!
+Energi Semesta Digital © 2024 drat. | 🇮🇩 Untuk Indonesia Jaya!

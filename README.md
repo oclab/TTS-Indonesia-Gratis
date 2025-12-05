@@ -81,7 +81,8 @@ GET /health
 
 ```bash
 # Generate audio dari teks
-curl -X POST http://localhost:5000/api/tts \
+# Ganti localhost:3000 dengan URL server Anda (localhost:5000 jika menggunakan Docker)
+curl -X POST http://localhost:3000/api/tts \
   -H "Content-Type: application/json" \
   -d '{
     "text": "Halo, selamat pagi Indonesia!",
@@ -91,7 +92,7 @@ curl -X POST http://localhost:5000/api/tts \
   --output audio.wav
 
 # Mendapatkan daftar pembicara
-curl http://localhost:5000/api/speakers
+curl http://localhost:3000/api/speakers
 ```
 
 #### Contoh Penggunaan dengan Python:
@@ -99,7 +100,8 @@ curl http://localhost:5000/api/speakers
 ```python
 import requests
 
-url = "http://localhost:5000/api/tts"
+# Ganti dengan URL server Anda (localhost:5000 jika menggunakan Docker)
+url = "http://localhost:3000/api/tts"
 payload = {
     "text": "Selamat datang di TTS Indonesia",
     "speaker": "gadis",
@@ -152,7 +154,7 @@ Model dapat diunduh dari [Releases](https://github.com/Wikidepia/indonesian-tts/
 python app.py
 ```
 
-Aplikasi akan berjalan di `http://localhost:3000`. Akses dokumentasi API Swagger di `http://localhost:3000/swagger/`.
+Aplikasi akan berjalan di `http://localhost:3000` (default port). Akses dokumentasi API Swagger di `http://localhost:3000/swagger/`.
 
 ### 4. Menggunakan Docker
 
@@ -195,10 +197,14 @@ docker stop tts-indonesia-api
 docker rm tts-indonesia-api
 ```
 
-Setelah aplikasi berjalan, Anda dapat mengakses:
+Setelah aplikasi berjalan dengan Docker, Anda dapat mengakses:
 - API Documentation (Swagger): `http://localhost:5000/swagger/`
 - Health Check: `http://localhost:5000/health`
 - API Endpoint: `http://localhost:5000/api/`
+
+**Catatan**: Port default berbeda tergantung cara menjalankan:
+- **Lokal (python app.py)**: Port 3000 (dapat diubah dengan environment variable `PORT`)
+- **Docker**: Port 5000 (sesuai konfigurasi di Dockerfile dan docker-compose.yml)
 
 ## Contoh Suara
 

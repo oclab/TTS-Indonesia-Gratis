@@ -6,7 +6,7 @@
 [![Jalankan Aplikasi ini](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-xl-dark.svg)](https://deddy-tts-indonesiaku-gratis.hf.space)
 
 
-Aplikasi ini digunakan untuk menghasilkan suara berbasis teks dengan berbagai pilihan pembicara. Teknologi yang digunakan meliputi model text-to-speech (TTS) yang canggih dengan konversi teks ke fonem (G2P). Model ini dilatih khusus untuk bahasa Indonesia, Jawa, dan Sunda.
+Aplikasi ini digunakan untuk menghasilkan suara berbasis teks dengan berbagai pilihan pembicara. Teknologi yang digunakan meliputi model text-to-speech (TTS) yang canggih dengan konversi teks ke fonem (G2P). Model yang dipakai dilatih khusus untuk bahasa Indonesia, Jawa, dan Sunda.
 
 ## Data
 
@@ -32,10 +32,179 @@ Aplikasi ini digunakan untuk menghasilkan suara berbasis teks dengan berbagai pi
 
 ## Cara Menggunakan
 
-1. Masukkan teks yang ingin diubah menjadi suara.
-2. Pilih kecepatan bicara yang diinginkan.
-3. Pilih bahasa dan pembicara yang diinginkan.
-4. Klik tombol "Lakukan Inferensi Audio" untuk menghasilkan suara.
+### 1. Menggunakan Web Interface (Online)
+
+Cara termudah adalah menggunakan aplikasi online yang sudah tersedia:
+
+1. Kunjungi [https://deddy-tts-indonesiaku-gratis.hf.space](https://deddy-tts-indonesiaku-gratis.hf.space)
+2. Masukkan teks yang ingin diubah menjadi suara di kolom teks
+3. Pilih kecepatan bicara yang diinginkan (0.1 - 1.99, default: 0.8)
+4. Pilih pembicara (Wibowo, Ardi, Gadis, Juminten, atau Asep)
+5. Klik tombol "Lakukan Inferensi Audio" untuk menghasilkan suara
+6. Audio akan diputar secara otomatis dan dapat diunduh
+
+### 2. Menggunakan REST API
+
+Aplikasi ini menyediakan REST API yang dapat digunakan untuk integrasi dengan aplikasi lain.
+
+#### Endpoint yang Tersedia:
+
+**a. Generate TTS Audio**
+```bash
+POST /api/tts
+Content-Type: application/json
+
+{
+  "text": "Halo, selamat pagi Indonesia!",
+  "speaker": "ardi",
+  "speed": 0.8,
+  "language": "Indonesian"
+}
+```
+
+**b. Mendapatkan Daftar Pembicara**
+```bash
+GET /api/speakers
+```
+
+**c. Mendapatkan Daftar Bahasa**
+```bash
+GET /api/languages
+```
+
+**d. Health Check**
+```bash
+GET /health
+```
+
+#### Contoh Penggunaan dengan cURL:
+
+```bash
+# Generate audio dari teks
+# Ganti localhost:3000 dengan URL server Anda (localhost:5000 jika menggunakan Docker)
+curl -X POST http://localhost:3000/api/tts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Halo, selamat pagi Indonesia!",
+    "speaker": "ardi",
+    "speed": 0.8
+  }' \
+  --output audio.wav
+
+# Mendapatkan daftar pembicara
+curl http://localhost:3000/api/speakers
+```
+
+#### Contoh Penggunaan dengan Python:
+
+```python
+import requests
+
+# Ganti dengan URL server Anda (localhost:5000 jika menggunakan Docker)
+url = "http://localhost:3000/api/tts"
+payload = {
+    "text": "Selamat datang di TTS Indonesia",
+    "speaker": "gadis",
+    "speed": 0.8,
+    "language": "Indonesian"
+}
+
+response = requests.post(url, json=payload)
+
+if response.status_code == 200:
+    with open("output.wav", "wb") as f:
+        f.write(response.content)
+    print("Audio berhasil dihasilkan!")
+else:
+    print(f"Error: {response.json()}")
+```
+
+### 3. Instalasi dan Menjalankan Lokal
+
+#### Prasyarat:
+- Python 3.10 atau lebih tinggi
+- espeak-ng (untuk text processing)
+- libsndfile1 (untuk audio processing)
+
+#### Langkah-langkah:
+
+**a. Clone Repository**
+```bash
+git clone https://github.com/oclab/TTS-Indonesia-Gratis.git
+cd TTS-Indonesia-Gratis
+```
+
+**b. Install Dependencies Sistem (Ubuntu/Debian)**
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential libsndfile1 espeak-ng
+```
+
+**c. Install Dependencies Python**
+```bash
+pip install -r requirements.txt
+```
+
+**d. Unduh Model TTS**
+
+Model dapat diunduh dari [Releases](https://github.com/Wikidepia/indonesian-tts/releases/). Letakkan file model di direktori `models/` dan file config di direktori `config/`.
+
+**e. Jalankan Aplikasi**
+```bash
+python app.py
+```
+
+Aplikasi akan berjalan di `http://localhost:3000` (default port). Akses dokumentasi API Swagger di `http://localhost:3000/swagger/`.
+
+### 4. Menggunakan Docker
+
+#### Menggunakan Docker Compose (Recommended):
+
+```bash
+# Clone repository
+git clone https://github.com/oclab/TTS-Indonesia-Gratis.git
+cd TTS-Indonesia-Gratis
+
+# Jalankan dengan docker-compose
+docker-compose up -d
+
+# Cek logs
+docker-compose logs -f
+
+# Stop service
+docker-compose down
+```
+
+#### Menggunakan Docker Manual:
+
+```bash
+# Build image
+docker build -t tts-indonesia .
+
+# Run container
+docker run -d \
+  --name tts-indonesia-api \
+  -p 5000:5000 \
+  -e PORT=5000 \
+  -e DEBUG=false \
+  tts-indonesia
+
+# Cek logs
+docker logs -f tts-indonesia-api
+
+# Stop container
+docker stop tts-indonesia-api
+docker rm tts-indonesia-api
+```
+
+Setelah aplikasi berjalan dengan Docker, Anda dapat mengakses:
+- API Documentation (Swagger): `http://localhost:5000/swagger/`
+- Health Check: `http://localhost:5000/health`
+- API Endpoint: `http://localhost:5000/api/`
+
+**Catatan**: Port default berbeda tergantung cara menjalankan:
+- **Lokal (python app.py)**: Port 3000 (dapat diubah dengan environment variable `PORT`)
+- **Docker**: Port 5000 (sesuai konfigurasi di Dockerfile dan docker-compose.yml)
 
 ## Contoh Suara
 
@@ -95,7 +264,7 @@ Trained from scratch on:
 
 ## Lisensi
 
-Proyek ini dilisensikan di bawah lisensi MIT. Lihat file [LICENSE](LICENSE) untuk informasi lebih lanjut.
+Proyek ini dilisensikan di bawah lisensi GPL-3.0. Lihat file [LICENSE](LICENSE) untuk informasi lebih lanjut.
 
 ## Kontribusi
 
@@ -103,8 +272,8 @@ Kami menyambut kontribusi dari siapa pun. Untuk berkontribusi, silakan buat _pul
 
 ## Kontak
 
-Untuk informasi lebih lanjut, silakan hubungi __drat di : http://drat.github.io
+Untuk informasi lebih lanjut, silakan hubungi drat di : https://drat.github.io
 
 ---
 
-Energi Semesta Digital © 2024 __drat. | 🇮🇩 Untuk Indonesia Jaya!
+Energi Semesta Digital © 2024 drat. | 🇮🇩 Untuk Indonesia Jaya!
